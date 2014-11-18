@@ -72,14 +72,25 @@ class GruntRunner(object):
             self.folders.append(f)
             if os.path.exists(os.path.join(f, "Gruntfile.js")):
                 self.grunt_files.append(os.path.join(f, "Gruntfile.js"))
+                self.grunt_files.append(os.path.join(f, "Gruntfile.js"))
             elif os.path.exists(os.path.join(f, "Gruntfile.coffee")):
                 self.grunt_files.append(os.path.join(f, "Gruntfile.coffee"))
+            for subDir in get_immediate_subdirectories(f):
+                testDir = os.path.join(f, subDir)
+                self.folders.append(testDir)
+                if os.path.exists(os.path.join(testDir, "Gruntfile.js")):
+                    self.grunt_files.append(os.path.join(testDir, "Gruntfile.js"))
+                elif os.path.exists(os.path.join(testDir, "Gruntfile.coffee")):
+                    self.grunt_files.append(os.path.join(testDir, "Gruntfile.coffee"))
+
 
         if len(self.grunt_files) > 0:
-            if len(self.grunt_files) == 1:
+            if len(self.grunt_files) == 0:
                 self.choose_file(0)
             else:
-                self.window.show_quick_panel(self.grunt_files, self.choose_file)
+                def list_on_done(i):
+                    self.choose_file(i)
+                show_quick_panel(self, self.grunt_files, list_on_done)
         else:
             sublime.error_message("Gruntfile.js or Gruntfile.coffee not found!")
 
@@ -89,7 +100,7 @@ class GruntRunner(object):
 
         self.tasks = self.list_tasks()
         if self.tasks is not None:
-            self.window.show_quick_panel(self.tasks, self.on_done)
+            show_quick_panel(self, self.tasks, self.on_done)
 
     def on_done(self, task):
         if task > -1:
@@ -128,6 +139,12 @@ def get_env_with_exec_args_path():
                 env['PATH'] = path
     return env
 
+def show_quick_panel(self, options, done):
+        sublime.set_timeout(lambda: self.window.show_quick_panel(options, done), 10)
+
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
 
 class GruntCommand(sublime_plugin.WindowCommand):
     def run(self):
